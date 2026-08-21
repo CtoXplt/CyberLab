@@ -5,24 +5,103 @@ class Database {
     private $connection;
 
     private function __construct() {
-        $host = '127.0.0.1';
-        $db = 'cyberseclab';
-        $user = 'root';
-        $pass = '';
+        $host = getenv('DB_HOST') ?: '127.0.0.1';
+        $db = getenv('DB_NAME') ?: 'cyberseclab';
+        $user = getenv('DB_USER') ?: 'root';
+        $pass = getenv('DB_PASS') !== false ? getenv('DB_PASS') : '';
         $charset = 'utf8mb4';
 
-        $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
-        $options = [
+        // Try MySQL first if DB_DRIVER is not explicitly sqlite
+        if (getenv('DB_DRIVER') !== 'sqlite') {
+            try {
+                $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
+                $options = [
+                    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                    PDO::ATTR_EMULATE_PREPARES   => false,
+                ];
+                $this->connection = new PDO($dsn, $user, $pass, $options);
+                return;
+            } catch (\PDOException $e) {
+                // Fallback to SQLite if MySQL fails
+            }
+        }
+
+        // SQLite Fallback
+        $sqliteDir = dirname(__DIR__) . '/storage';
+        if (!is_dir($sqliteDir)) {
+            mkdir($sqliteDir, 0777, true);
+        }
+        $sqlitePath = $sqliteDir . '/cyberseclab.sqlite';
+        $isNew = !file_exists($sqlitePath);
+
+        $this->connection = new PDO("sqlite:$sqlitePath", null, null, [
             PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES   => false,
-        ];
+        ]);
 
-        try {
-            $this->connection = new PDO($dsn, $user, $pass, $options);
-        } catch (\PDOException $e) {
-            throw new \PDOException($e->getMessage(), (int)$e->getCode());
+        if ($isNew) {
+            $this->initializeSqlite();
         }
+    }
+
+    private function initializeSqlite() {
+        $this->connection->exec("
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT NOT NULL UNIQUE,
+                password_hash TEXT NOT NULL,
+                role TEXT NOT NULL DEFAULT 'participant',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE TABLE IF NOT EXISTS flags (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                challenge_name TEXT NOT NULL UNIQUE,
+                flag_hash TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE TABLE IF NOT EXISTS submissions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                challenge_id INTEGER NOT NULL,
+                submitted_flag TEXT NOT NULL,
+                status TEXT NOT NULL,
+                ip_address TEXT NOT NULL,
+                submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE TABLE IF NOT EXISTS uploads (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                filename TEXT NOT NULL,
+                stored_filename TEXT NOT NULL,
+                file_size INTEGER NOT NULL DEFAULT 0,
+                mime_type TEXT DEFAULT NULL,
+                uploaded_by INTEGER DEFAULT NULL,
+                uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE TABLE IF NOT EXISTS site_content (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL DEFAULT 'Cyber Security Lab',
+                content TEXT DEFAULT NULL,
+                is_default INTEGER NOT NULL DEFAULT 0,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_by INTEGER DEFAULT NULL
+            );
+        ");
+
+        require_once dirname(__DIR__) . '/config/ctf.php';
+        $adminPass = password_hash('admin_cs_lab_2026', PASSWORD_BCRYPT, ['cost' => 12]);
+        $partPass = password_hash('upl04d_ch4ll3ng3_2026', PASSWORD_BCRYPT, ['cost' => 12]);
+        $flagHash = hash('sha256', CTF_FLAG);
+
+        $stmt = $this->connection->prepare("INSERT OR IGNORE INTO users (username, password_hash, role) VALUES (?, ?, ?)");
+        $stmt->execute(['admin', $adminPass, 'admin']);
+        $stmt->execute(['participant', $partPass, 'participant']);
+
+        $stmt = $this->connection->prepare("INSERT OR IGNORE INTO flags (challenge_name, flag_hash) VALUES (?, ?)");
+        $stmt->execute(['Metadata Analysis - Card Challenge', $flagHash]);
+
+        $defaultContent = @file_get_contents(dirname(__DIR__) . '/storage/default_homepage.html') ?: '<h1>Cyber Security Lab</h1>';
+        $stmt = $this->connection->prepare("INSERT OR IGNORE INTO site_content (title, content, is_default) VALUES (?, ?, 1)");
+        $stmt->execute(['Cyber Security Lab', $defaultContent]);
     }
 
     public static function getInstance() {
@@ -36,3 +115,4 @@ class Database {
         return $this->connection;
     }
 }
+

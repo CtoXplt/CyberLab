@@ -1,3 +1,13 @@
+---
+title: CyberLab
+emoji: 🛡️
+colorFrom: green
+colorTo: red
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # Cyber Security Lab — File Upload Vulnerability Challenge
 
 Platform edukasi keamanan siber berbasis web untuk pembelajaran praktis (hands-on) tentang **Metadata Analysis** dan **Unrestricted File Upload Vulnerability**.
