@@ -13,7 +13,7 @@ FROM php:8.2-cli-alpine
 
 # Install SQLite and required extensions
 RUN apk add --no-cache sqlite sqlite-libs bash && \
-    docker-php-ext-install pdo pdo_mysql
+    docker-php-ext-install pdo pdo_mysql pdo_sqlite
 
 WORKDIR /var/www/html
 
@@ -31,7 +31,7 @@ RUN mkdir -p backend/public/uploads backend/storage/rate_limits && \
 # Initialize metadata for challenge cards
 RUN php backend/scripts/inject_metadata.php
 
-EXPOSE 7860
+EXPOSE 10000
 
-# Start PHP built-in server on port 7860 (Hugging Face Spaces default port)
-CMD ["php", "-S", "0.0.0.0:7860", "-t", "frontend/dist", "backend/router.php"]
+# Start PHP built-in server on port 10000 (Render.com default port)
+CMD ["php", "-S", "0.0.0.0:10000", "-t", "frontend/dist", "backend/router.php"]
