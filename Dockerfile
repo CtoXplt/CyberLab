@@ -11,8 +11,8 @@ RUN npm run build
 # Stage 2: PHP + SQLite/MySQL Server
 FROM php:8.2-cli-alpine
 
-# Install SQLite dev headers + MySQL client libs, then compile PHP extensions
-RUN apk add --no-cache sqlite sqlite-libs sqlite-dev bash mysql-client && \
+# Install SQLite dev headers + pkgconf (required by docker-php-ext-install to locate sqlite3.pc)
+RUN apk add --no-cache sqlite sqlite-dev pkgconf bash && \
     docker-php-ext-install pdo pdo_mysql pdo_sqlite
 
 WORKDIR /var/www/html
