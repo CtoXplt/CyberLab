@@ -28,24 +28,22 @@ class Database {
         }
 
         // SQLite Fallback
-        $sqliteDir = dirname(__DIR__) . '/storage';
+        $backendDir = dirname(__DIR__, 2);
+        $sqliteDir = $backendDir . '/storage';
         if (!is_dir($sqliteDir)) {
             mkdir($sqliteDir, 0777, true);
         }
         $sqlitePath = $sqliteDir . '/cyberseclab.sqlite';
-        $isNew = !file_exists($sqlitePath);
 
         $this->connection = new PDO("sqlite:$sqlitePath", null, null, [
             PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         ]);
 
-        if ($isNew) {
-            $this->initializeSqlite();
-        }
+        $this->initializeSqlite($backendDir);
     }
 
-    private function initializeSqlite() {
+    private function initializeSqlite($backendDir) {
         $this->connection->exec("
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -87,21 +85,36 @@ class Database {
             );
         ");
 
-        require_once dirname(__DIR__) . '/config/ctf.php';
+        require_once $backendDir . '/config/ctf.php';
         $adminPass = password_hash('admin_cs_lab_2026', PASSWORD_BCRYPT, ['cost' => 12]);
         $partPass = password_hash('upl04d_ch4ll3ng3_2026', PASSWORD_BCRYPT, ['cost' => 12]);
         $flagHash = hash('sha256', CTF_FLAG);
 
-        $stmt = $this->connection->prepare("INSERT OR IGNORE INTO users (username, password_hash, role) VALUES (?, ?, ?)");
-        $stmt->execute(['admin', $adminPass, 'admin']);
-        $stmt->execute(['participant', $partPass, 'participant']);
+        // Seed users if missing
+        $stmtUser = $this->connection->query("SELECT COUNT(*) as cnt FROM users");
+        $userCount = $stmtUser ? $stmtUser->fetch()['cnt'] : 0;
+        if ($userCount == 0) {
+            $stmt = $this->connection->prepare("INSERT OR IGNORE INTO users (username, password_hash, role) VALUES (?, ?, ?)");
+            $stmt->execute(['admin', $adminPass, 'admin']);
+            $stmt->execute(['participant', $partPass, 'participant']);
+        }
 
-        $stmt = $this->connection->prepare("INSERT OR IGNORE INTO flags (challenge_name, flag_hash) VALUES (?, ?)");
-        $stmt->execute(['Metadata Analysis - Card Challenge', $flagHash]);
+        // Seed flags if missing
+        $stmtFlag = $this->connection->query("SELECT COUNT(*) as cnt FROM flags");
+        $flagCount = $stmtFlag ? $stmtFlag->fetch()['cnt'] : 0;
+        if ($flagCount == 0) {
+            $stmt = $this->connection->prepare("INSERT OR IGNORE INTO flags (challenge_name, flag_hash) VALUES (?, ?)");
+            $stmt->execute(['Metadata Analysis - Card Challenge', $flagHash]);
+        }
 
-        $defaultContent = @file_get_contents(dirname(__DIR__) . '/storage/default_homepage.html') ?: '<h1>Cyber Security Lab</h1>';
-        $stmt = $this->connection->prepare("INSERT OR IGNORE INTO site_content (title, content, is_default) VALUES (?, ?, 1)");
-        $stmt->execute(['Cyber Security Lab', $defaultContent]);
+        // Seed site content if missing
+        $stmtContent = $this->connection->query("SELECT COUNT(*) as cnt FROM site_content");
+        $contentCount = $stmtContent ? $stmtContent->fetch()['cnt'] : 0;
+        if ($contentCount == 0) {
+            $defaultContent = @file_get_contents($backendDir . '/storage/default_homepage.html') ?: '<h1>Cyber Security Lab</h1>';
+            $stmt = $this->connection->prepare("INSERT OR IGNORE INTO site_content (title, content, is_default) VALUES (?, ?, 1)");
+            $stmt->execute(['Cyber Security Lab', $defaultContent]);
+        }
     }
 
     public static function getInstance() {

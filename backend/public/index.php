@@ -36,7 +36,9 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 $db = Database::getInstance()->getConnection();
 
-if ($method === 'GET' && $uri === '/api/home') {
+if ($method === 'GET' && $uri === '/api/health') {
+    Response::success(['status' => 'healthy']);
+} elseif ($method === 'GET' && $uri === '/api/home') {
     (new HomeController($db))->index();
 } elseif ($method === 'GET' && $uri === '/api/challenges') {
     (new ChallengeController())->index();
