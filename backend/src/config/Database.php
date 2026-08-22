@@ -83,12 +83,24 @@ class Database {
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_by INTEGER DEFAULT NULL
             );
+            CREATE TABLE IF NOT EXISTS bounty_config (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                flag TEXT NOT NULL,
+                command_comment TEXT NOT NULL,
+                cipher_type TEXT NOT NULL DEFAULT 'xor_hex',
+                cipher_key TEXT NOT NULL DEFAULT 'SPADE2026',
+                qr_filename TEXT DEFAULT NULL,
+                is_active INTEGER NOT NULL DEFAULT 1,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_by INTEGER DEFAULT NULL
+            );
         ");
 
         require_once $backendDir . '/config/ctf.php';
         $adminPass = password_hash('admin_cs_lab_2026', PASSWORD_BCRYPT, ['cost' => 12]);
         $partPass = password_hash('upl04d_ch4ll3ng3_2026', PASSWORD_BCRYPT, ['cost' => 12]);
         $flagHash = hash('sha256', CTF_FLAG);
+        $bountyFlagHash = hash('sha256', CTF_BOUNTY_DEFAULT_FLAG);
 
         // Seed users if missing
         $stmtUser = $this->connection->query("SELECT COUNT(*) as cnt FROM users");
@@ -100,12 +112,9 @@ class Database {
         }
 
         // Seed flags if missing
-        $stmtFlag = $this->connection->query("SELECT COUNT(*) as cnt FROM flags");
-        $flagCount = $stmtFlag ? $stmtFlag->fetch()['cnt'] : 0;
-        if ($flagCount == 0) {
-            $stmt = $this->connection->prepare("INSERT OR IGNORE INTO flags (challenge_name, flag_hash) VALUES (?, ?)");
-            $stmt->execute(['Metadata Analysis - Card Challenge', $flagHash]);
-        }
+        $stmt = $this->connection->prepare("INSERT OR IGNORE INTO flags (challenge_name, flag_hash) VALUES (?, ?)");
+        $stmt->execute(['Metadata Analysis - Card Challenge', $flagHash]);
+        $stmt->execute([CTF_BOUNTY_CHALLENGE_NAME, $bountyFlagHash]);
 
         // Seed site content if missing
         $stmtContent = $this->connection->query("SELECT COUNT(*) as cnt FROM site_content");
@@ -114,6 +123,15 @@ class Database {
             $defaultContent = @file_get_contents($backendDir . '/storage/default_homepage.html') ?: '<h1>Cyber Security Lab</h1>';
             $stmt = $this->connection->prepare("INSERT OR IGNORE INTO site_content (title, content, is_default) VALUES (?, ?, 1)");
             $stmt->execute(['Cyber Security Lab', $defaultContent]);
+        }
+
+        // Seed bounty config if missing
+        $stmtBounty = $this->connection->query("SELECT COUNT(*) as cnt FROM bounty_config");
+        $bountyCount = $stmtBounty ? $stmtBounty->fetch()['cnt'] : 0;
+        if ($bountyCount == 0) {
+            $defaultComment = "CIPHER: " . ctf_xor_encrypt(CTF_BOUNTY_DEFAULT_FLAG, CTF_BOUNTY_DEFAULT_KEY) . " | Key: " . CTF_BOUNTY_DEFAULT_KEY . " | Type: XOR-HEX";
+            $stmt = $this->connection->prepare("INSERT INTO bounty_config (flag, command_comment, cipher_type, cipher_key, is_active) VALUES (?, ?, 'xor_hex', ?, 1)");
+            $stmt->execute([CTF_BOUNTY_DEFAULT_FLAG, $defaultComment, CTF_BOUNTY_DEFAULT_KEY]);
         }
     }
 

@@ -10,6 +10,33 @@ define('CTF_BASE64_PAYLOAD', 'bWRfNG40bHlzMXNfMXNfazN5X3QwXzFuZjBybTR0MTBu');
 define('CTF_PARTICIPANT_USERNAME', 'participant');
 define('CTF_PARTICIPANT_PASSWORD', 'upl04d_ch4ll3ng3_2026');
 
+// --- Final Bounty Challenge: Kartu S ---
+define('CTF_BOUNTY_CHALLENGE_NAME', 'Bounty Hunt - Kartu S Challenge');
+define('CTF_BOUNTY_DEFAULT_FLAG', 'CTF{sp4d3_m4st3r_b0unty_x0r_c1ph3r_2026}');
+define('CTF_BOUNTY_DEFAULT_KEY', 'SPADE2026');
+
+function ctf_xor_encrypt(string $text, string $key): string
+{
+    $out = '';
+    $kLen = strlen($key);
+    for ($i = 0; $i < strlen($text); $i++) {
+        $out .= chr(ord($text[$i]) ^ ord($key[$i % $kLen]));
+    }
+    return bin2hex($out);
+}
+
+function ctf_xor_decrypt(string $hex, string $key): string
+{
+    $bin = @hex2bin($hex);
+    if ($bin === false) return '';
+    $out = '';
+    $kLen = strlen($key);
+    for ($i = 0; $i < strlen($bin); $i++) {
+        $out .= chr(ord($bin[$i]) ^ ord($key[$i % $kLen]));
+    }
+    return $out;
+}
+
 /**
  * 20 password candidates — only CTF_PARTICIPANT_PASSWORD is valid for login.
  */

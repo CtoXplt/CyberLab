@@ -9,6 +9,13 @@ class ChallengeController {
                 'difficulty' => 'beginner-intermediate',
                 'category' => 'metadata-analysis',
                 'cards' => ['card_j.png', 'card_q.png', 'card_k.png', 'card_a.png']
+            ],
+            [
+                'id' => 2,
+                'name' => 'Bounty Hunt - Kartu S Challenge',
+                'difficulty' => 'intermediate-hard',
+                'category' => 'stream-cipher-stego',
+                'cards' => ['card_s.png']
             ]
         ];
         Response::success($challenges);

@@ -84,3 +84,21 @@ export const deleteUpload = (id) => fetchApi('/api/admin/uploads/delete', {
   body: JSON.stringify({ id }),
 });
 
+// Bounty Management & Final Challenge API
+export const getBountyConfig = () => fetchApi('/api/admin/bounty');
+export const updateBountyConfig = (data) => fetchApi('/api/admin/bounty/update', {
+  method: 'POST',
+  body: JSON.stringify(data),
+});
+export const uploadBountyQr = (file) => {
+  const formData = new FormData();
+  formData.append('qr_file', file);
+  return fetchApi('/api/admin/bounty/upload-qr', {
+    method: 'POST',
+    body: formData,
+    headers: { 'Content-Type': undefined }
+  });
+};
+export const deleteBountyQr = () => fetchApi('/api/admin/bounty/delete-qr', { method: 'POST' });
+export const submitBountyFlag = (flag) => submitFlag('bounty_s', flag);
+

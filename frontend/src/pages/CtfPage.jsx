@@ -60,7 +60,8 @@ export default function CtfPage() {
                 <li>Analisis metadata kartu <strong>(J, Q, K, A)</strong> dengan <code>exiftool</code> atau <code>strings</code>.</li>
                 <li>Temukan string Base64, decode menjadi teks (contoh: <code>echo &lt;payload&gt; | base64 -d</code>).</li>
                 <li>Bentuk flag: <code>CTF&#123;hasil_decode&#125;</code> lalu submit di bawah.</li>
-                <li>Setelah flag benar, dapatkan username + daftar 20 password - hanya satu yang valid untuk login.</li>
+                <li>Setelah flag benar, dapatkan username + daftar 20 password untuk login ke dashboard peserta.</li>
+                <li><strong>Tahap Selanjutnya:</strong> Setelah berhasil upload file di dashboard, Anda akan membuka <strong>Tantangan Final Kartu S (Stream Cipher)</strong> untuk klaim <strong>Barcode DANA</strong>!</li>
               </ol>
             </div>
           </SpotlightCard>

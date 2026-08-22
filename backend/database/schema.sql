@@ -64,3 +64,20 @@ CREATE TABLE IF NOT EXISTS site_content (
     updated_by  INT UNSIGNED DEFAULT NULL,
     FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================
+-- Table: bounty_config
+-- ============================================
+CREATE TABLE IF NOT EXISTS bounty_config (
+    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    flag            VARCHAR(255) NOT NULL,
+    command_comment TEXT NOT NULL,
+    cipher_type     VARCHAR(50) NOT NULL DEFAULT 'xor_hex',
+    cipher_key      VARCHAR(100) NOT NULL DEFAULT 'SPADE2026',
+    qr_filename     VARCHAR(255) DEFAULT NULL,
+    is_active       TINYINT(1) NOT NULL DEFAULT 1,
+    updated_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_by      INT UNSIGNED DEFAULT NULL,
+    FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+

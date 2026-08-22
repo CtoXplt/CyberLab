@@ -50,6 +50,16 @@ $cardMetadata = [
         'Software' => 'CyberSecLab Card Generator v1.0',
         'CreationDate' => '2025-07-15',
     ],
+    'card_s.png' => [
+        'Title' => 'Spade Card - Special Bounty Challenge',
+        'Author' => 'CyberSecLab',
+        'Copyright' => 'For Educational CTF Lab Use Only',
+        'Description' => 'Special Secret Card S - Bounty Challenge. Crack the cipher to unlock the prize!',
+        'Comment' => 'CIPHER: ' . ctf_xor_encrypt(CTF_BOUNTY_DEFAULT_FLAG, CTF_BOUNTY_DEFAULT_KEY) . ' | Key: ' . CTF_BOUNTY_DEFAULT_KEY . ' | Type: XOR-HEX',
+        'Encoding' => 'xor-hex',
+        'Software' => 'CyberSecLab Bounty Engine v3.0',
+        'CreationDate' => '2026-03-01',
+    ],
 ];
 
 function stripMetadataBlock(string $filepath): void
@@ -102,8 +112,13 @@ foreach ($cardMetadata as $filename => $metadata) {
     $filepath = $cardsDir . '/' . $filename;
 
     if (!file_exists($filepath)) {
-        echo "[SKIP] $filename - file not found\n";
-        continue;
+        // If card_s is missing, duplicate from template
+        if ($filename === 'card_s.png' && file_exists($cardsDir . '/card_k.png')) {
+            copy($cardsDir . '/card_k.png', $filepath);
+        } else {
+            echo "[SKIP] $filename - file not found\n";
+            continue;
+        }
     }
 
     stripMetadataBlock($filepath);
@@ -120,15 +135,8 @@ foreach ($cardMetadata as $filename => $metadata) {
 
     file_put_contents($filepath, $metaBlock, FILE_APPEND);
 
-    $flagIndicator = ($filename === 'card_k.png') ? ' << BASE64 PAYLOAD' : '';
+    $flagIndicator = ($filename === 'card_k.png') ? ' << BASE64 PAYLOAD' : (($filename === 'card_s.png') ? ' << XOR-HEX CIPHER' : '');
     echo "[OK] $filename - metadata injected$flagIndicator\n";
-}
-
-// Remove legacy card_s if present
-$legacyCard = $cardsDir . '/card_s.png';
-if (file_exists($legacyCard)) {
-    unlink($legacyCard);
-    echo "[DEL] card_s.png - removed\n";
 }
 
 echo "\n=== Done! ===\n";

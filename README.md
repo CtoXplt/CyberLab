@@ -205,56 +205,54 @@ Navigasi ke: **http://localhost:5173**
 
 ### Solusi CTF (Instructor & Panduan Peserta)
 
+#### 🃏 Tahap 1: Analisis Metadata Kartu (J, Q, K, A)
 | Langkah | Detail |
 |---------|--------|
-| Kartu | 4 kartu: J, Q, K, A (kartu S dihapus) |
+| Kartu | 4 kartu awal: J, Q, K, A |
 | Metadata | `card_k.png` → field `Comment` berisi Base64 |
 | Payload | `bWRfNG40bHlzMXNfMXNfazN5X3QwXzFuZjBybTR0MTBu` |
 | Decode | `md_4n4lys1s_1s_k3y_t0_1nf0rm4t10n` |
 | Flag | `CTF{md_4n4lys1s_1s_k3y_t0_1nf0rm4t10n}` |
-| Setelah submit | Username `participant` + 20 kandidat password (hanya `upl04d_ch4ll3ng3_2026` valid) |
+| Setelah submit | Kredensial peserta (`participant` / `upl04d_ch4ll3ng3_2026`) |
 
-#### 🛠️ Cara Analisis Metadata Menggunakan ExifTool
+#### 💰 Tahap 3: Final Bounty Challenge — Kartu S (Stream Cipher)
+| Langkah | Detail |
+|---------|--------|
+| Kartu | Kartu Spade / Secret `card_s.png` (dibuka setelah upload file) |
+| Metadata | `card_s.png` → field `Comment` berisi XOR Stream Cipher |
+| Default Key | `SPADE2026` |
+| Metode Decode | Hex stream di-XOR dengan key `SPADE2026` (via CyberChef atau script Python) |
+| Default Flag | `CTF{sp4d3_m4st3r_b0unty_x0r_c1ph3r_2026}` |
+| Hadiah | **Barcode QR DANA** muncul di layar setelah submit flag Kartu S berhasil |
 
-##### 1. Instalasi ExifTool (Jika Belum Terpasang)
-* **Linux (Ubuntu/Debian):** `sudo apt install libimage-exiftool-perl`
-* **macOS:** `brew install exiftool`
-* **Windows (via Winget / Choco / PowerShell):** `winget install OliverBetz.ExifTool` atau download dari [exiftool.org](https://exiftool.org/)
-
-##### 2. Perintah Membaca Metadata Gambar
+#### 🛠️ Cara Analisis Metadata Menggunakan ExifTool & CyberChef
 ```bash
-# Lihat seluruh metadata dari file kartu K
-exiftool card_k.png
-
-# Ambil secara spesifik field Comment saja
-exiftool -Comment card_k.png
-
-# Periksa seluruh kartu sekaligus
-exiftool -Comment card_*.png
+# Baca metadata Kartu S
+exiftool -Comment card_s.png
 ```
 
-##### 3. Decode Payload Base64 Menjadi Flag
-* **Linux / macOS / Git Bash:**
-  ```bash
-  echo bWRfNG40bHlzMXNfMXNfazN5X3QwXzFuZjBybTR0MTBu | base64 -d
-  ```
-* **Windows PowerShell:**
-  ```powershell
-  [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String("bWRfNG40bHlzMXNfMXNfazN5X3QwXzFuZjBybTR0MTBu"))
-  ```
+##### Cara Decode XOR Cipher (Python):
+```python
+cipher_hex = "..." # dari comment card_s
+key = "SPADE2026"
+raw = bytes.fromhex(cipher_hex)
+flag = "".join(chr(b ^ ord(key[i % len(key)])) for i, b in enumerate(raw))
+print(flag)
+```
 
 ---
 
 ## User Journey
 
-1. **Buka Homepage** → Pelajari tentang lab
-2. **Buka CTF Page** → Download 4 kartu (J, Q, K, A)
-3. **Analisis metadata kartu K** → Temukan string Base64 di `Comment`
-4. **Decode Base64** → Bentuk flag `CTF{...}` dan submit
-5. **Dapatkan username + 20 password** → Coba login sampai ketemu yang benar
-6. **Login ke Dashboard** → Upload file untuk deface homepage
-7. **Lihat hasil** → Homepage berubah
-8. **Restore** → Admin kembalikan homepage ke awal
+1. **Buka Homepage & CTF Page** → Download kartu (J, Q, K, A)
+2. **Analisis metadata kartu K** → Decode Base64 → Flag Tahap 1
+3. **Login Peserta** → Akses dashboard peserta
+4. **Tahap 2: File Upload** → Upload file shell/deface ke homepage
+5. **Tahap 3: Final Bounty (Kartu S)** → Terbuka setelah upload
+6. **Analisis Metadata Kartu S** → Pecahkan Stream XOR Cipher dengan key
+7. **Submit Flag Kartu S** → **Barcode QR DANA** muncul untuk klaim hadiah uang!
+8. **Admin Panel** → Admin dapat mengelola QR DANA, edit flag, dan edit command/cipher metadata kapan saja.
+
 
 ---
 

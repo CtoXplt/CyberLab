@@ -30,6 +30,7 @@ require_once __DIR__ . '/../src/controllers/FlagController.php';
 require_once __DIR__ . '/../src/controllers/AuthController.php';
 require_once __DIR__ . '/../src/controllers/DashboardController.php';
 require_once __DIR__ . '/../src/controllers/UploadController.php';
+require_once __DIR__ . '/../src/controllers/BountyController.php';
 
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $method = $_SERVER['REQUEST_METHOD'];
@@ -44,6 +45,20 @@ if ($method === 'GET' && $uri === '/api/health') {
     (new ChallengeController())->index();
 } elseif ($method === 'GET' && preg_match('#^/api/challenges/cards/([^/]+)$#', $uri, $matches)) {
     (new ChallengeController())->downloadCard($matches[1]);
+} elseif ($method === 'GET' && $uri === '/api/bounty/qr-image') {
+    (new BountyController($db))->getQrImage();
+} elseif ($method === 'GET' && $uri === '/api/admin/bounty') {
+    checkAdmin();
+    (new BountyController($db))->getConfig();
+} elseif ($method === 'POST' && $uri === '/api/admin/bounty/update') {
+    checkAdmin();
+    (new BountyController($db))->updateConfig();
+} elseif ($method === 'POST' && $uri === '/api/admin/bounty/upload-qr') {
+    checkAdmin();
+    (new BountyController($db))->uploadQr();
+} elseif ($method === 'POST' && $uri === '/api/admin/bounty/delete-qr') {
+    checkAdmin();
+    (new BountyController($db))->deleteQr();
 } elseif ($method === 'POST' && $uri === '/api/flags/submit') {
     (new FlagController($db))->submit();
 } elseif ($method === 'POST' && $uri === '/api/auth/login') {
