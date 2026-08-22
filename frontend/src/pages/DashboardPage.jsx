@@ -176,7 +176,10 @@ export default function DashboardPage() {
       return;
     }
     let commentText = '';
-    if (bountyCipherType === 'xor_hex') {
+    if (bountyCipherType === 'base64') {
+      const b64 = btoa(bountyFlag);
+      commentText = `BASE64-PAYLOAD: ${b64} | Algorithm: Base64`;
+    } else if (bountyCipherType === 'xor_hex') {
       const cipherHex = generateXorHex(bountyFlag, bountyCipherKey || 'SPADE2026');
       commentText = `CIPHER: ${cipherHex} | Key: "${bountyCipherKey || 'SPADE2026'}" | Algorithm: XOR(text, key) -> Hex`;
     } else if (bountyCipherType === 'rot13_hex') {
@@ -274,7 +277,8 @@ export default function DashboardPage() {
       id: 'bounty',
       label: isAdmin ? 'Bounty & Kartu S' : 'Bounty Reward (Kartu S)',
       icon: Gift,
-      badge: !isAdmin && hasUploaded ? 'UNLOCKED' : null
+      badge: !isAdmin ? (hasUploaded ? 'UNLOCKED' : 'LOCKED') : null,
+      badgeType: !isAdmin && !hasUploaded ? 'warn' : 'ok'
     },
   ];
 
@@ -297,7 +301,7 @@ export default function DashboardPage() {
       <div className="container mt-8 mb-8">
         {/* Tabs */}
         <div className="dashboard-tabs">
-          {TABS.map(({ id, label, icon: Icon, badge }) => (
+          {TABS.map(({ id, label, icon: Icon, badge, badgeType }) => (
             <button
               key={id}
               onClick={() => setActiveTab(id)}
@@ -309,10 +313,11 @@ export default function DashboardPage() {
                 {badge && (
                   <span style={{
                     fontSize: '0.65rem',
-                    padding: '0.1rem 0.4rem',
+                    padding: '0.12rem 0.4rem',
                     borderRadius: '4px',
-                    background: 'var(--primary)',
-                    color: '#000',
+                    background: badgeType === 'warn' ? 'rgba(255, 68, 68, 0.2)' : 'var(--primary)',
+                    color: badgeType === 'warn' ? '#ff8888' : '#000',
+                    border: badgeType === 'warn' ? '1px solid rgba(255, 68, 68, 0.4)' : 'none',
                     fontWeight: 700
                   }}>
                     {badge}
@@ -745,7 +750,8 @@ export default function DashboardPage() {
                               onChange={(e) => setBountyCipherType(e.target.value)}
                               style={{ background: '#000', color: 'var(--text-primary)' }}
                             >
-                              <option value="xor_hex">XOR Cipher + Hex Stream (Rekomendasi)</option>
+                              <option value="xor_hex">XOR Cipher + Hex Stream (Menengah-Tinggi)</option>
+                              <option value="base64">Base64 Encoding (Standar / Mudah)</option>
                               <option value="rot13_hex">ROT13 + Hex Obfuscation</option>
                               <option value="base85">ASCII85 / Base85</option>
                               <option value="custom">Custom Command / Text</option>
@@ -836,8 +842,37 @@ export default function DashboardPage() {
                     </SpotlightCard>
                   </div>
                 </div>
+              ) : !hasUploaded ? (
+                /* ================= PARTICIPANT VIEW: LOCKED STATE (NOT YET UPLOADED) ================= */
+                <SpotlightCard style={{ textAlign: 'center', padding: '3.5rem 1.5rem', border: '1px dashed rgba(255, 68, 68, 0.35)' }}>
+                  <div style={{
+                    display: 'inline-flex',
+                    padding: '1.25rem',
+                    borderRadius: '50%',
+                    background: 'rgba(255, 68, 68, 0.1)',
+                    color: 'var(--accent)',
+                    marginBottom: '1.25rem',
+                    border: '1px solid rgba(255, 68, 68, 0.3)',
+                    boxShadow: '0 0 20px rgba(255, 68, 68, 0.2)'
+                  }}>
+                    <Lock size={40} />
+                  </div>
+
+                  <h2 style={{ color: 'var(--accent)', marginBottom: '0.75rem' }}>
+                    🔒 Tantangan Kartu S Terkunci
+                  </h2>
+                  <p className="text-secondary" style={{ maxWidth: '560px', margin: '0 auto 1.75rem auto', fontSize: '0.95rem', lineHeight: 1.6 }}>
+                    Anda belum menyelesaikan <strong>Tahap 2 (File Upload Vulnerability)</strong>. Silakan unggah file deface / shell terlebih dahulu di tab <strong>Edit Homepage</strong> untuk membuka tantangan Kartu S dan klaim hadiah Barcode DANA.
+                  </p>
+
+                  <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                    <GlowButton variant="primary" onClick={() => setActiveTab('edit')}>
+                      <FileUp size={16} /> Menuju Tab Edit Homepage (Upload File)
+                    </GlowButton>
+                  </div>
+                </SpotlightCard>
               ) : (
-                /* ================= PARTICIPANT VIEW: KARTU S CHALLENGE ================= */
+                /* ================= PARTICIPANT VIEW: KARTU S CHALLENGE (UNLOCKED) ================= */
                 <div>
                   <SpotlightCard className="mb-6">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1rem' }}>
@@ -846,7 +881,7 @@ export default function DashboardPage() {
                         <div>
                           <h2 style={{ margin: 0 }}>Tantangan Final: Kartu S (Bounty Reward 💰)</h2>
                           <p className="text-secondary" style={{ margin: 0, fontSize: '0.9rem' }}>
-                            Pecahkan Stream Cipher pada Kartu Spade (S) untuk membuka Barcode DANA dan klaim hadiah uang tunai!
+                            Pecahkan cipher pada Kartu Spade (S) untuk membuka Barcode DANA dan klaim hadiah uang tunai!
                           </p>
                         </div>
                       </div>
@@ -863,8 +898,8 @@ export default function DashboardPage() {
                       <ol style={{ fontSize: '0.9rem' }}>
                         <li>Klik kartu Spade di bawah untuk membalik dan mengunduh file <code>card_s.png</code>.</li>
                         <li>Gunakan tools analisis metadata seperti <code>exiftool -Comment card_s.png</code> atau <code>strings card_s.png</code>.</li>
-                        <li>Perhatikan petunjuk cipher/key yang tertera di metadata (Stream XOR Cipher Hex stream, bukan Base64 sederhana).</li>
-                        <li>Dekripsi ciphertext menggunakan key yang ditemukan (bisa menggunakan script Python XOR atau CyberChef: <em>From Hex → XOR</em>).</li>
+                        <li>Perhatikan petunjuk cipher/key yang tertera di metadata (Stream XOR Cipher, ROT13, Base64, dsb).</li>
+                        <li>Dekripsi ciphertext menggunakan key/resep yang sesuai untuk mendapatkan Flag final.</li>
                         <li>Masukkan Flag berformat <code>CTF&#123;...&#125;</code> pada form di bawah untuk menampilkan <strong>Barcode DANA</strong>!</li>
                       </ol>
                     </div>
