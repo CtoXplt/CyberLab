@@ -133,8 +133,10 @@ class Database {
         ");
 
         require_once $backendDir . '/config/ctf.php';
-        $adminPass = password_hash('admin_cs_lab_2026', PASSWORD_BCRYPT, ['cost' => 12]);
-        $partPass = password_hash('upl04d_ch4ll3ng3_2026', PASSWORD_BCRYPT, ['cost' => 12]);
+        // Admin password: baca dari env CTF_ADMIN_PASSWORD, fallback ke default (ubah via env di production!)
+        $adminRawPass = getenv('CTF_ADMIN_PASSWORD') ?: 'admin_cs_lab_2026';
+        $adminPass = password_hash($adminRawPass, PASSWORD_BCRYPT, ['cost' => 12]);
+        $partPass = password_hash(CTF_PARTICIPANT_PASSWORD, PASSWORD_BCRYPT, ['cost' => 12]);
         $flagHash = hash('sha256', CTF_FLAG);
         $bountyFlagHash = hash('sha256', CTF_BOUNTY_DEFAULT_FLAG);
 

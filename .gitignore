@@ -6,11 +6,24 @@ frontend/node_modules/
 dist/
 frontend/dist/
 
-# Uploaded payloads & shell files
+# ============================================================
+# SENSITIVE / SECURITY-CRITICAL — NEVER COMMIT THESE
+# ============================================================
+
+# Backdoor shell files (CTF lab payloads — local only)
+backdoor_file_shell/
+backdoor_file_shell.php
+backdoor_file_shell_encoded.txt
+*.shell.php
+*.webshell.php
+
+# Uploaded payloads & shell files (participant uploads)
 backend/public/uploads/*
 !backend/public/uploads/.gitkeep
 
-# Temporary rate limit logs & cache
+# SQLite database (contains hashed passwords & session data)
+backend/storage/*.sqlite
+backend/storage/bounty/
 backend/storage/rate_limits/*
 !backend/storage/rate_limits/.gitkeep
 
@@ -19,25 +32,35 @@ backend/storage/rate_limits/*
 .env.local
 .env.*.local
 *.env
+.env.production
+.env.staging
 
+# ============================================================
 # IDE & Editor files
+# ============================================================
 .cursor/
 .vscode/
 .idea/
 *.swp
 *.swo
 
+# ============================================================
 # Logs
+# ============================================================
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# ============================================================
 # OS metadata
+# ============================================================
 .DS_Store
 Thumbs.db
 
+# ============================================================
 # Temporary files
+# ============================================================
 *.tmp
 *.temp
