@@ -60,7 +60,7 @@ export default function DashboardPage() {
   }, [activeTab]);
 
   const fetchDashboard = () => {
-    getDashboard().then(setDashboardData).catch(err => {
+    getDashboard().then(res => setDashboardData(res?.data || res)).catch(err => {
       if (err.message.includes('Unauthorized') || err.message.includes('401')) {
         navigate('/admin/login');
       }
@@ -68,17 +68,18 @@ export default function DashboardPage() {
   };
 
   const fetchUploads = () => {
-    getUploads().then(res => setUploads(res.data || [])).catch(console.error);
+    getUploads().then(res => setUploads(res?.data?.data || res?.data || [])).catch(console.error);
   };
 
   const fetchBountySettings = () => {
-    getBountyConfig().then(res => {
+    getBountyConfig().then(envelope => {
+      const res = envelope?.data || envelope;
       setBountyConfig(res);
-      setBountyFlag(res.flag || '');
-      setBountyComment(res.command_comment || '');
-      setBountyCipherType(res.cipher_type || 'xor_hex');
-      setBountyCipherKey(res.cipher_key || 'SPADE2026');
-      setBountyActive(res.is_active !== false);
+      setBountyFlag(res?.flag || '');
+      setBountyComment(res?.command_comment || '');
+      setBountyCipherType(res?.cipher_type || 'xor_hex');
+      setBountyCipherKey(res?.cipher_key || 'SPADE2026');
+      setBountyActive(res?.is_active !== false);
     }).catch(() => {
       // Ignored for non-admin or if not accessible
     });
@@ -102,13 +103,14 @@ export default function DashboardPage() {
     setUploadStatus('loading');
     setUploadMsg('');
     try {
-      const res = await uploadFile(file);
+      const envelope = await uploadFile(file);
+      const res = envelope?.data || envelope;
       setUploadStatus('success');
-      setUploadMsg(`File berhasil diupload: ${res.stored_filename}`);
+      setUploadMsg(`File berhasil diupload: ${res?.stored_filename || res?.original_filename || 'file'}`);
+      fetchDashboard();
       setFile(null);
       const inputEl = document.getElementById('fileInput');
       if (inputEl) inputEl.value = '';
-      fetchDashboard();
       if (activeTab === 'history') fetchUploads();
     } catch (err) {
       setUploadStatus('error');
@@ -137,7 +139,7 @@ export default function DashboardPage() {
     setRestoreStatus('loading');
     try {
       const res = await cleanAllUploads();
-      alert(res?.message || 'Semua skrip deface & riwayat upload berhasil dibersihkan!');
+      alert(res?.message || res?.data?.message || 'Semua skrip deface & riwayat upload berhasil dibersihkan!');
       fetchUploads();
       fetchDashboard();
     } catch (err) {
@@ -209,7 +211,7 @@ export default function DashboardPage() {
         is_active: bountyActive ? 1 : 0
       });
       setBountySaveStatus('success');
-      setBountySaveMsg(res.message || 'Pengaturan Bounty & Metadata Kartu S berhasil disimpan!');
+      setBountySaveMsg(res?.message || 'Pengaturan Bounty & Metadata Kartu S berhasil disimpan!');
       fetchBountySettings();
     } catch (err) {
       setBountySaveStatus('error');
@@ -227,7 +229,7 @@ export default function DashboardPage() {
     try {
       const res = await uploadBountyQr(qrFile);
       setQrUploadStatus('success');
-      setQrUploadMsg(res.message || 'Foto QR DANA berhasil diunggah!');
+      setQrUploadMsg(res?.message || 'Foto QR DANA berhasil diunggah!');
       setQrFile(null);
       const inputEl = document.getElementById('qrFileInput');
       if (inputEl) inputEl.value = '';
@@ -257,9 +259,9 @@ export default function DashboardPage() {
     setPartSubmitStatus('loading');
     setPartSubmitError('');
     try {
-      const res = await submitBountyFlag(partFlagInput);
+      const envelope = await submitBountyFlag(partFlagInput);
       setPartSubmitStatus('success');
-      setPartSubmitResult(res);
+      setPartSubmitResult(envelope?.data || envelope);
     } catch (err) {
       setPartSubmitStatus('error');
       setPartSubmitError(err.message || 'Flag Kartu S salah. Periksa kembali analisis metadata/cipher Anda.');

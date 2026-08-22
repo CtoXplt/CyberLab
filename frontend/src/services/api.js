@@ -28,13 +28,20 @@ async function fetchApi(endpoint, options = {}) {
     headers: mergedHeaders,
   });
 
+  // Clone sebelum membaca agar body stream tidak exhausted
+  const responseClone = response.clone();
+
   if (!response.ok) {
     let errorMsg = 'An error occurred';
     try {
       const errData = await response.json();
       errorMsg = errData.message || errData.error || errorMsg;
     } catch (e) {
-      errorMsg = response.statusText;
+      try {
+        errorMsg = await responseClone.text() || response.statusText;
+      } catch (_) {
+        errorMsg = response.statusText;
+      }
     }
     throw new Error(errorMsg);
   }
@@ -45,10 +52,14 @@ async function fetchApi(endpoint, options = {}) {
 
   try {
     const json = await response.json();
-    // Unwrap the standard envelope: { success, data, message, errors }
-    return json.data !== undefined ? json.data : json;
+    // Return the full response envelope so callers can access .data and .message
+    return json;
   } catch (e) {
-    return response.text();
+    try {
+      return await responseClone.text();
+    } catch (_) {
+      return null;
+    }
   }
 }
 

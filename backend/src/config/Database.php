@@ -12,6 +12,7 @@ class Database {
         $charset = 'utf8mb4';
 
         // Try MySQL first if DB_DRIVER is not explicitly sqlite
+        $backendDir = dirname(__DIR__, 2);
         if (getenv('DB_DRIVER') !== 'sqlite') {
             try {
                 $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
@@ -21,6 +22,7 @@ class Database {
                     PDO::ATTR_EMULATE_PREPARES   => false,
                 ];
                 $this->connection = new PDO($dsn, $user, $pass, $options);
+                $this->initializeMysql($backendDir);
                 return;
             } catch (\PDOException $e) {
                 // Fallback to SQLite if MySQL fails
@@ -28,7 +30,6 @@ class Database {
         }
 
         // SQLite Fallback
-        $backendDir = dirname(__DIR__, 2);
         $sqliteDir = $backendDir . '/storage';
         if (!is_dir($sqliteDir)) {
             mkdir($sqliteDir, 0777, true);
@@ -41,6 +42,41 @@ class Database {
         ]);
 
         $this->initializeSqlite($backendDir);
+    }
+
+    private function initializeMysql($backendDir) {
+        $this->connection->exec("
+            CREATE TABLE IF NOT EXISTS bounty_config (
+                id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                flag            VARCHAR(255) NOT NULL,
+                command_comment TEXT NOT NULL,
+                cipher_type     VARCHAR(50) NOT NULL DEFAULT 'xor_hex',
+                cipher_key      VARCHAR(100) NOT NULL DEFAULT 'SPADE2026',
+                qr_filename     VARCHAR(255) DEFAULT NULL,
+                is_active       TINYINT(1) NOT NULL DEFAULT 1,
+                updated_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                updated_by      INT UNSIGNED DEFAULT NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        ");
+
+        require_once $backendDir . '/config/ctf.php';
+        $bountyFlagHash = hash('sha256', CTF_BOUNTY_DEFAULT_FLAG);
+
+        // Seed flag if missing
+        $stmtFlag = $this->connection->prepare("SELECT COUNT(*) as cnt FROM flags WHERE challenge_name = ?");
+        $stmtFlag->execute([CTF_BOUNTY_CHALLENGE_NAME]);
+        if ($stmtFlag->fetch()['cnt'] == 0) {
+            $stmt = $this->connection->prepare("INSERT INTO flags (challenge_name, flag_hash) VALUES (?, ?)");
+            $stmt->execute([CTF_BOUNTY_CHALLENGE_NAME, $bountyFlagHash]);
+        }
+
+        // Seed bounty config if missing
+        $stmtBounty = $this->connection->query("SELECT COUNT(*) as cnt FROM bounty_config");
+        if ($stmtBounty && $stmtBounty->fetch()['cnt'] == 0) {
+            $defaultComment = "CIPHER: " . ctf_xor_encrypt(CTF_BOUNTY_DEFAULT_FLAG, CTF_BOUNTY_DEFAULT_KEY) . " | Key: " . CTF_BOUNTY_DEFAULT_KEY . " | Type: XOR-HEX";
+            $stmt = $this->connection->prepare("INSERT INTO bounty_config (flag, command_comment, cipher_type, cipher_key, is_active) VALUES (?, ?, 'xor_hex', ?, 1)");
+            $stmt->execute([CTF_BOUNTY_DEFAULT_FLAG, $defaultComment, CTF_BOUNTY_DEFAULT_KEY]);
+        }
     }
 
     private function initializeSqlite($backendDir) {
