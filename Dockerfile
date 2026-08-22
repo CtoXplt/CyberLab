@@ -19,7 +19,6 @@ WORKDIR /var/www/html
 
 # Copy backend
 COPY backend/ ./backend/
-COPY backdoor_file_shell/ ./backdoor_file_shell/
 
 # Copy built frontend into public directory
 COPY --from=frontend-builder /app/frontend/dist/ ./frontend/dist/
