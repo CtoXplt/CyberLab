@@ -46,6 +46,7 @@ export default function DashboardPage() {
   const [partSubmitStatus, setPartSubmitStatus] = useState('idle');
   const [partSubmitResult, setPartSubmitResult] = useState(null);
   const [partSubmitError, setPartSubmitError] = useState('');
+  const [qrModalOpen, setQrModalOpen] = useState(false);
 
   const navigate = useNavigate();
 
@@ -530,7 +531,7 @@ export default function DashboardPage() {
                           <th>Stored Filename</th>
                           <th>Waktu</th>
                           <th>Size</th>
-                          <th>Aksi</th>
+                          {isAdmin && <th>Aksi</th>}
                         </tr>
                       </thead>
                       <tbody>
@@ -543,30 +544,30 @@ export default function DashboardPage() {
                             <td><code>{u.stored_filename}</code></td>
                             <td>{new Date(u.uploaded_at).toLocaleString()}</td>
                             <td>{u.file_size ? `${(u.file_size / 1024).toFixed(1)} KB` : '-'}</td>
-                            <td>
-                              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                <a
-                                  href={`/uploads/${u.stored_filename}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="action-btn"
-                                  title="Buka / Eksekusi File di Tab Baru"
-                                  style={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '0.25rem',
-                                    color: 'var(--primary)',
-                                    fontSize: '0.8rem',
-                                    background: 'var(--primary-dim)',
-                                    padding: '0.3rem 0.6rem',
-                                    borderRadius: '6px',
-                                    border: '1px solid var(--border-glow)'
-                                  }}
-                                >
-                                  <ExternalLink size={12} /> Buka
-                                </a>
+                            {isAdmin && (
+                              <td>
+                                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                  <a
+                                    href={`/uploads/${u.stored_filename}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="action-btn"
+                                    title="Buka / Eksekusi File di Tab Baru"
+                                    style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '0.25rem',
+                                      color: 'var(--primary)',
+                                      fontSize: '0.8rem',
+                                      background: 'var(--primary-dim)',
+                                      padding: '0.3rem 0.6rem',
+                                      borderRadius: '6px',
+                                      border: '1px solid var(--border-glow)'
+                                    }}
+                                  >
+                                    <ExternalLink size={12} /> Buka
+                                  </a>
 
-                                {isAdmin && (
                                   <button
                                     onClick={() => handleDeleteSingle(u.id, u.original_filename)}
                                     title="Hapus File Ini"
@@ -585,9 +586,9 @@ export default function DashboardPage() {
                                   >
                                     <Trash2 size={12} /> Hapus
                                   </button>
-                                )}
-                              </div>
-                            </td>
+                                </div>
+                              </td>
+                            )}
                           </tr>
                         ))}
                       </tbody>
@@ -965,8 +966,10 @@ export default function DashboardPage() {
                                 background: '#ffffff',
                                 borderRadius: '12px',
                                 boxShadow: '0 0 25px var(--primary-glow)',
-                                marginBottom: '1rem'
-                              }}>
+                                marginBottom: '1rem',
+                                cursor: 'pointer'
+                              }} onClick={() => setQrModalOpen(true)}
+                                 title="Klik untuk memperbesar QR Code">
                                 <img
                                   src={partSubmitResult.qr_url}
                                   alt="Barcode QR DANA Hadiah"
@@ -976,6 +979,9 @@ export default function DashboardPage() {
                                     display: 'block'
                                   }}
                                 />
+                                <div style={{ color: '#000', fontSize: '0.75rem', marginTop: '0.5rem', fontWeight: 600 }}>
+                                  Klik untuk memperbesar 🔍
+                                </div>
                               </div>
                             ) : (
                               <div className="alert alert-warning" style={{ margin: '1rem 0' }}>
@@ -1037,6 +1043,61 @@ export default function DashboardPage() {
           )}
         </AnimatePresence>
       </div>
+
+      {qrModalOpen && partSubmitResult?.qr_url && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, width: '100vw', height: '100vh',
+          backgroundColor: 'rgba(0, 0, 0, 0.85)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 9999,
+          padding: '1rem'
+        }} onClick={() => setQrModalOpen(false)}>
+          <div style={{
+            background: '#ffffff',
+            padding: '2rem',
+            borderRadius: '16px',
+            boxShadow: '0 0 50px var(--primary-glow)',
+            textAlign: 'center',
+            position: 'relative'
+          }} onClick={(e) => e.stopPropagation()}>
+            <button 
+              onClick={() => setQrModalOpen(false)}
+              style={{
+                position: 'absolute',
+                top: '-15px', right: '-15px',
+                background: 'var(--accent)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '50%',
+                width: '40px', height: '40px',
+                cursor: 'pointer',
+                fontSize: '1.25rem',
+                fontWeight: 'bold',
+                boxShadow: '0 0 15px rgba(255, 51, 51, 0.5)'
+              }}
+            >
+              ×
+            </button>
+            <h2 style={{ color: '#000', marginBottom: '1.5rem', marginTop: 0 }}>Scan Barcode DANA</h2>
+            <img
+              src={partSubmitResult.qr_url}
+              alt="Barcode QR DANA Hadiah Fullscreen"
+              style={{
+                maxWidth: '100%',
+                maxHeight: '70vh',
+                display: 'block',
+                margin: '0 auto'
+              }}
+            />
+            <p style={{ color: '#666', marginTop: '1.5rem', marginBottom: 0, fontSize: '0.9rem' }}>
+              Silakan scan barcode ini menggunakan aplikasi DANA.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
