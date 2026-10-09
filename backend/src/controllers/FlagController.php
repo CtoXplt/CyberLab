@@ -64,9 +64,21 @@ class FlagController {
                     'instructions'=> 'Silakan scan Barcode QR DANA di bawah ini untuk klaim hadiah uang / bounty Anda.'
                 ], "Flag Kartu S valid! Selamat atas keberhasilan Anda!");
             } else {
+                // Determine participant number based on order of distinct IP addresses
+                $stmtRank = $this->db->prepare("SELECT ip_address FROM submissions WHERE challenge_id = ? AND status = 'correct' GROUP BY ip_address ORDER BY MIN(id) ASC");
+                $stmtRank->execute([$row['id']]);
+                $ips = $stmtRank->fetchAll(PDO::FETCH_COLUMN);
+                
+                $rank = array_search($ip, $ips);
+                if ($rank === false) {
+                    $rank = count($ips);
+                }
+                $participantNum = ($rank % 7) + 1;
+                $assignedUsername = 'participant' . $participantNum;
+
                 Response::success([
                     'credentials' => [
-                        'username' => CTF_PARTICIPANT_USERNAME,
+                        'username' => $assignedUsername,
                         'passwords' => ctf_shuffled_password_list(),
                     ],
                 ], "Flag is correct!");
