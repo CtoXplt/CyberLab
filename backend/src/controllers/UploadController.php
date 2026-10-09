@@ -64,19 +64,36 @@ class UploadController {
         $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 100;
         $offset = ($page - 1) * $limit;
 
-        $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM uploads");
-        $stmt->execute();
+        $userId = $_SESSION['user_id'] ?? null;
+        $role = $_SESSION['role'] ?? 'participant';
+
+        $whereClause = "";
+        $params = [];
+        if ($role !== 'admin') {
+            $whereClause = "WHERE u.uploaded_by = ?";
+            $params[] = $userId;
+        }
+
+        $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM uploads u $whereClause");
+        $stmt->execute($params);
         $total = $stmt->fetch()['total'];
 
-        $stmt = $this->db->prepare("
+        $sql = "
             SELECT u.id, u.filename AS original_filename, u.stored_filename, u.uploaded_at, u.file_size, usr.username
             FROM uploads u
             LEFT JOIN users usr ON u.uploaded_by = usr.id
+            $whereClause
             ORDER BY u.uploaded_at DESC
             LIMIT ? OFFSET ?
-        ");
-        $stmt->bindParam(1, $limit, PDO::PARAM_INT);
-        $stmt->bindParam(2, $offset, PDO::PARAM_INT);
+        ";
+        $stmt = $this->db->prepare($sql);
+        
+        $paramIndex = 1;
+        if ($role !== 'admin') {
+            $stmt->bindParam($paramIndex++, $userId, PDO::PARAM_INT);
+        }
+        $stmt->bindParam($paramIndex++, $limit, PDO::PARAM_INT);
+        $stmt->bindParam($paramIndex++, $offset, PDO::PARAM_INT);
         $stmt->execute();
         $uploads = $stmt->fetchAll();
 

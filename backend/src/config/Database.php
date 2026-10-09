@@ -147,6 +147,9 @@ class Database {
             $stmt = $this->connection->prepare("INSERT OR IGNORE INTO users (username, password_hash, role) VALUES (?, ?, ?)");
             $stmt->execute(['admin', $adminPass, 'admin']);
             $stmt->execute(['participant', $partPass, 'participant']);
+            for ($i = 1; $i <= 7; $i++) {
+                $stmt->execute(['participant' . $i, $partPass, 'participant']);
+            }
         }
 
         // Seed flags if missing

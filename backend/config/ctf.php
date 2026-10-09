@@ -7,7 +7,7 @@ define('CTF_FLAG', 'CTF{md_4n4lys1s_1s_k3y_t0_1nf0rm4t10n}');
 define('CTF_FLAG_INNER', 'md_4n4lys1s_1s_k3y_t0_1nf0rm4t10n');
 define('CTF_BASE64_PAYLOAD', 'bWRfNG40bHlzMXNfMXNfazN5X3QwXzFuZjBybTR0MTBu');
 
-define('CTF_PARTICIPANT_USERNAME', 'participant');
+define('CTF_PARTICIPANT_USERNAME', 'participant1 s/d participant7 (dibagikan admin)');
 define('CTF_PARTICIPANT_PASSWORD', 'upl04d_ch4ll3ng3_2026');
 
 // --- Final Bounty Challenge: Kartu S ---

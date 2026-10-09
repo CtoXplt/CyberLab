@@ -30,7 +30,7 @@ export default function CtfPage() {
     try {
       const res = await submitFlag('metadata_1', flag);
       setStatus('success');
-      setResult(res);
+      setResult(res.data || res);
     } catch (err) {
       setStatus('error');
       setErrorMsg(err.message || 'Terjadi kesalahan saat memvalidasi flag.');

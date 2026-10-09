@@ -269,7 +269,7 @@ export default function DashboardPage() {
   };
 
   const isAdmin = dashboardData?.user?.role === 'admin';
-  const hasUploaded = (dashboardData?.stats?.total_uploads || 0) > 0;
+  const hasUploaded = dashboardData?.stats?.has_uploaded_shell === true;
 
   const TABS = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
@@ -375,8 +375,8 @@ export default function DashboardPage() {
                       </div>
                       <p className="text-secondary" style={{ fontSize: '0.9rem', margin: 0 }}>
                         {hasUploaded
-                          ? '🎉 Anda telah berhasil mengunggah file! Tantangan Final (Kartu S) telah TERBUKA untuk memperebutkan Barcode DANA.'
-                          : 'Tahap 2: Unggah file shell/deface di menu "Edit Homepage" untuk membuka Tantangan Final Kartu S & klaim Bounty DANA.'}
+                          ? '🎉 Anda telah berhasil mengunggah Web Shell! Tantangan Final (Kartu S) telah TERBUKA untuk memperebutkan Barcode DANA.'
+                          : 'Tahap 2: Unggah file shell (.php) di menu "Edit Homepage" untuk membuka Tantangan Final Kartu S & klaim Bounty DANA.'}
                       </p>
                     </div>
                     <GlowButton
@@ -864,7 +864,7 @@ export default function DashboardPage() {
                     🔒 Tantangan Kartu S Terkunci
                   </h2>
                   <p className="text-secondary" style={{ maxWidth: '560px', margin: '0 auto 1.75rem auto', fontSize: '0.95rem', lineHeight: 1.6 }}>
-                    Anda belum menyelesaikan <strong>Tahap 2 (File Upload Vulnerability)</strong>. Silakan unggah file deface / shell terlebih dahulu di tab <strong>Edit Homepage</strong> untuk membuka tantangan Kartu S dan klaim hadiah Barcode DANA.
+                    Anda belum menyelesaikan <strong>Tahap 2 (File Upload Vulnerability)</strong>. Silakan unggah Web Shell (.php) terlebih dahulu di tab <strong>Edit Homepage</strong> untuk membuka tantangan Kartu S dan klaim hadiah Barcode DANA. Mengunggah gambar tidak akan membuka tantangan ini.
                   </p>
 
                   <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>

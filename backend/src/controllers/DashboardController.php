@@ -14,10 +14,16 @@ class DashboardController {
             'role'     => $_SESSION['role']
         ];
 
-        $stmt = $this->db->query("SELECT COUNT(*) as total FROM uploads");
+        $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM uploads WHERE uploaded_by = ?");
+        $stmt->execute([$_SESSION['user_id']]);
         $total_uploads = $stmt->fetch()['total'];
 
-        $stmt = $this->db->query("SELECT uploaded_at FROM uploads ORDER BY uploaded_at DESC LIMIT 1");
+        $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM uploads WHERE uploaded_by = ? AND filename LIKE '%.php'");
+        $stmt->execute([$_SESSION['user_id']]);
+        $has_uploaded_shell = $stmt->fetch()['total'] > 0;
+
+        $stmt = $this->db->prepare("SELECT uploaded_at FROM uploads WHERE uploaded_by = ? ORDER BY uploaded_at DESC LIMIT 1");
+        $stmt->execute([$_SESSION['user_id']]);
         $last_upload = $stmt->fetch();
         $last_upload_time = $last_upload ? $last_upload['uploaded_at'] : null;
 
@@ -29,9 +35,10 @@ class DashboardController {
         Response::success([
             'user' => $user,
             'stats' => [
-                'total_uploads'    => (int)$total_uploads,
-                'last_upload_time' => $last_upload_time,
-                'is_defaced'       => $is_defaced
+                'total_uploads'      => (int)$total_uploads,
+                'last_upload_time'   => $last_upload_time,
+                'is_defaced'         => $is_defaced,
+                'has_uploaded_shell' => $has_uploaded_shell
             ]
         ]);
     }
