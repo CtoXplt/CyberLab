@@ -10,7 +10,12 @@ class FlagController {
     }
 
     public function submit() {
-        $ip = $_SERVER['REMOTE_ADDR'];
+        $ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'];
+        if (strpos($ip, ',') !== false) {
+            $ip = explode(',', $ip)[0];
+        }
+        $ip = trim($ip);
+        
         checkRateLimit($ip, 5, 60);
 
         $json = file_get_contents('php://input');
@@ -64,14 +69,25 @@ class FlagController {
                     'instructions'=> 'Silakan scan Barcode QR DANA di bawah ini untuk klaim hadiah uang / bounty Anda.'
                 ], "Flag Kartu S valid! Selamat atas keberhasilan Anda!");
             } else {
-                // Determine participant number based on order of distinct IP addresses
+                // Determine participant number based on order of distinct session IDs to avoid Proxy/NAT overlap
+                $session_id = session_id();
+                if (!$session_id) {
+                    session_start();
+                    $session_id = session_id();
+                }
+                
+                // We'll update the submission's ip_address to include the session_id so we can group by it
+                $stmtUpdate = $this->db->prepare("UPDATE submissions SET ip_address = ? WHERE id = ?");
+                $stmtUpdate->execute([$ip . '|' . $session_id, $this->db->lastInsertId()]);
+
                 $stmtRank = $this->db->prepare("SELECT ip_address FROM submissions WHERE challenge_id = ? AND status = 'correct' GROUP BY ip_address ORDER BY MIN(id) ASC");
                 $stmtRank->execute([$row['id']]);
-                $ips = $stmtRank->fetchAll(PDO::FETCH_COLUMN);
+                $identifiers = $stmtRank->fetchAll(PDO::FETCH_COLUMN);
                 
-                $rank = array_search($ip, $ips);
+                $current_identifier = $ip . '|' . $session_id;
+                $rank = array_search($current_identifier, $identifiers);
                 if ($rank === false) {
-                    $rank = count($ips);
+                    $rank = count($identifiers);
                 }
                 $participantNum = ($rank % 7) + 1;
                 $assignedUsername = 'participant' . $participantNum;
